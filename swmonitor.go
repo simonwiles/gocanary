@@ -2,13 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
-)
-
-const (
-	port = 8080
 )
 
 func jsonResponse(response any, w http.ResponseWriter) {
@@ -37,7 +34,12 @@ func middleware() http.Handler {
 }
 
 func main() {
-	fmt.Printf("Listening on localhost:%d...\n", port)
+	host := flag.String("host", "localhost", "Port to run the server on")
+	port := flag.Uint("port", 8080, "Port to run the server on")
+
+	flag.Parse()
+
+	fmt.Printf("Listening on %s:%d...\n", *host, *port)
 	http.Handle("/", middleware())
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf("%s:%d", *host, *port), nil))
 }
