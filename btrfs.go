@@ -3,15 +3,18 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"os/exec"
 	"strings"
+	"time"
 )
 
 type scrubStatus struct {
-	ScrubStarted string `json:"scrubStarted"`
-	Status       string `json:"status"`
-	Duration     string `json:"duration"`
-	ErrorSummary string `json:"errorSummary"`
+	LastScrubFinished  *time.Time `json:"lastScrubFinished,omitempty"`
+	Duration           string     `json:"duration,omitempty"`
+	Status             string     `json:"status,omitempty"`
+	ErrorSummary       string     `json:"errorSummary"`
+	DaysSinceLastScrub int        `json:"daysSinceLastScrub,omitempty"`
 }
 
 type btrfsData struct {
@@ -36,6 +39,15 @@ func GetBtrfsData(mountPoint string) (*btrfsData, error) {
 	return &btrfsData, nil
 }
 
+func daysSince(t time.Time) int {
+	return int(time.Since(t).Hours() / 24)
+}
+
+func parseDuration(durations string) (time.Duration, error) {
+	fields := strings.Split(durations, ":")
+	return time.ParseDuration(fmt.Sprintf("%sh%sm%ss", fields[0], fields[1], fields[2]))
+}
+
 func getScrubStatusOutput(mountPoint string) ([]byte, error) {
 	return exec.Command(
 		"btrfs",
@@ -48,21 +60,42 @@ func getScrubStatusOutput(mountPoint string) ([]byte, error) {
 func parseScrubStatusOutput(scrubStatusOutput []byte) (*scrubStatus, error) {
 	scrubStatus := scrubStatus{}
 	scanner := bufio.NewScanner(bytes.NewReader(scrubStatusOutput))
+	var scrubStarted time.Time
+	var duration time.Duration
+
 	for scanner.Scan() {
 		line := scanner.Text()
 		fields := strings.SplitN(line, ":", 2)
 
 		switch field := fields[0]; field {
+
 		case "Scrub started":
-			scrubStatus.ScrubStarted = strings.TrimSpace(fields[1])
+			var err error
+			scrubStarted, err = time.Parse(time.ANSIC, strings.TrimSpace(fields[1]))
+			if err != nil {
+				return nil, err
+			}
+
 		case "Status":
 			scrubStatus.Status = strings.TrimSpace(fields[1])
+
 		case "Duration":
+			var err error
 			scrubStatus.Duration = strings.TrimSpace(fields[1])
+			duration, err = parseDuration(scrubStatus.Duration)
+			if err != nil {
+				return nil, err
+			}
+
 		case "Error summary":
 			scrubStatus.ErrorSummary = strings.TrimSpace(fields[1])
-		default:
 		}
+	}
+
+	if (scrubStarted != time.Time{} && duration != 0) {
+		lastScrubFinished := scrubStarted.Add(duration)
+		scrubStatus.LastScrubFinished = &lastScrubFinished
+		scrubStatus.DaysSinceLastScrub = daysSince(lastScrubFinished)
 	}
 
 	return &scrubStatus, nil
