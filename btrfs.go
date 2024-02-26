@@ -10,9 +10,9 @@ import (
 )
 
 type scrubStatus struct {
-	LastScrubFinished  *time.Time `json:"lastScrubFinished,omitempty"`
+	LastScrubFinished  *time.Time `json:"lastScrubFinished"`
 	Duration           string     `json:"duration,omitempty"`
-	Status             string     `json:"status,omitempty"`
+	Status             string     `json:"status"`
 	ErrorSummary       string     `json:"errorSummary"`
 	DaysSinceLastScrub int        `json:"daysSinceLastScrub,omitempty"`
 }
