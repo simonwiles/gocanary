@@ -9,7 +9,7 @@ import (
 	"os"
 )
 
-const AppVersion = "0.1"
+const AppVersion = "0.2"
 
 type response struct {
 	Version string           `json:"version"`
