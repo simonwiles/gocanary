@@ -49,7 +49,7 @@ func middleware() http.Handler {
 
 func main() {
 	host := flag.String("host", "localhost", "Port to run the server on")
-	port := flag.Uint("port", 8080, "Port to run the server on")
+	port := flag.Uint("port", 8930, "Port to run the server on")
 	version := flag.Bool("version", false, "prints current app version")
 
 	flag.Parse()
