@@ -54,7 +54,7 @@ func main() {
 
 	flag.Parse()
 	if *version {
-		fmt.Printf("swmonitor %s\n", AppVersion)
+		fmt.Printf("gocanary %s\n", AppVersion)
 		os.Exit(0)
 	}
 
