@@ -32,18 +32,18 @@ func jsonResponse(response any, w http.ResponseWriter) {
 	w.Write(rJson)
 }
 
-func doAlerts(alerts []alertRule, disk *disk) bool {
+func doAlerts(alerts []alertRule, response response) (bool, *string) {
 
 	for _, alert := range alerts {
-		fail, err := expr.Run(alert.Program, disk)
+		fail, err := expr.Run(alert.Program, response)
 		if err != nil {
 			panic(err)
 		}
 		if fail == true {
-			return true
+			return true, &alert.Rule
 		}
 	}
-	return false
+	return false, nil
 }
 
 func middleware(alerts []alertRule) http.Handler {
@@ -55,10 +55,8 @@ func middleware(alerts []alertRule) http.Handler {
 			Disks:   disksMap,
 		}
 
-		for k, disk := range disksMap {
-			if alert := doAlerts(alerts, disk); alert {
-				fmt.Println(k, alert)
-			}
+		if alert, rule := doAlerts(alerts, response); alert {
+			fmt.Println(alert, *rule)
 		}
 
 		if err == nil {

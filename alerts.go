@@ -6,19 +6,19 @@ import (
 )
 
 type alertRule struct {
-	rule    string
+	Rule    string
 	Program *vm.Program
 }
 
 func compileAlerts(alertRules *[]string) ([]alertRule, error) {
 	alerts := make([]alertRule, len(*alertRules))
 	for i, ruleStr := range *alertRules {
-		program, err := expr.Compile(ruleStr, expr.Env(disk{}))
+		program, err := expr.Compile(ruleStr, expr.Env(response{}))
 		if err != nil {
 			return nil, err
 		}
 		alerts[i] = alertRule{
-			rule:    ruleStr,
+			Rule:    ruleStr,
 			Program: program,
 		}
 	}
