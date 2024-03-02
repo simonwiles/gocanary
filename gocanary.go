@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/expr-lang/expr"
 	"github.com/peterbourgon/ff/v4"
 	"github.com/peterbourgon/ff/v4/ffhelp"
 )
@@ -31,13 +32,33 @@ func jsonResponse(response any, w http.ResponseWriter) {
 	w.Write(rJson)
 }
 
-func middleware() http.Handler {
+func doAlerts(alerts []alertRule, disk *disk) bool {
+
+	for _, alert := range alerts {
+		fail, err := expr.Run(alert.Program, disk)
+		if err != nil {
+			panic(err)
+		}
+		if fail == true {
+			return true
+		}
+	}
+	return false
+}
+
+func middleware(alerts []alertRule) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		disksMap, err := GetDisksMap()
 
 		response := response{
 			Version: AppVersion,
 			Disks:   disksMap,
+		}
+
+		for k, disk := range disksMap {
+			if alert := doAlerts(alerts, disk); alert {
+				fmt.Println(k, alert)
+			}
 		}
 
 		if err == nil {
@@ -53,10 +74,11 @@ func main() {
 
 	fs := ff.NewFlagSet("gocanary")
 	var (
-		version = fs.BoolLong("version", "prints current app version")
-		host    = fs.String('h', "host", "localhost", "Port to run the server on")
-		port    = fs.Uint('p', "port", 8930, "Port to run the server on")
-		_       = fs.String('c', "config", "", "Path to config file")
+		version    = fs.BoolLong("version", "prints current app version")
+		host       = fs.String('h', "host", "localhost", "Port to run the server on")
+		port       = fs.Uint('p', "port", 8930, "Port to run the server on")
+		alertRules = fs.StringSetLong("alert-when", "alert rule (repeatable)")
+		_          = fs.String('c', "config", "", "Path to config file")
 	)
 
 	if err := ff.Parse(fs, os.Args[1:],
@@ -74,7 +96,13 @@ func main() {
 		os.Exit(0)
 	}
 
+	alerts, err := compileAlerts(alertRules)
+	if err != nil {
+		fmt.Printf("Failed to compile alert rules, with error:\n%v\n", err)
+		os.Exit(1)
+	}
+
 	fmt.Printf("Listening on %s:%d...\n", *host, *port)
-	http.Handle("/", middleware())
+	http.Handle("/", middleware(alerts))
 	log.Fatal(http.ListenAndServe(fmt.Sprintf("%s:%d", *host, *port), nil))
 }
