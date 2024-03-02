@@ -33,11 +33,11 @@ func jsonResponse(response any, w http.ResponseWriter) {
 
 func middleware() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fileSystems, err := GetDisksMap()
+		disksMap, err := GetDisksMap()
 
 		response := response{
 			Version: AppVersion,
-			Disks:   fileSystems,
+			Disks:   disksMap,
 		}
 
 		if err == nil {
