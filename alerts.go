@@ -27,17 +27,20 @@ func compileAlerts(alertExprs *[]string) ([]alertRule, error) {
 	return alertRules, nil
 }
 
-func testAlertRules(response response, alertRules []alertRule) []string {
+func testAlertRules(response response, alertRules []alertRule) map[string]interface{} {
 
-	alerts := []string{}
+	alerts := make(map[string]interface{})
 	for _, alertRule := range alertRules {
 		fail, err := expr.Run(alertRule.Program, response)
 		if err != nil {
-			alerts = append(alerts, fmt.Sprintf("Failed to evaluate alert rule: %v", err))
+			alerts[alertRule.Rule] = fmt.Sprintf("Failed to evaluate alert rule: %v", err)
+			continue
 		}
-		if fail == true {
-			alerts = append(alerts, alertRule.Rule)
+		if fail == false {
+			continue
 		}
+		alerts[alertRule.Rule] = fail
+		fmt.Printf("Alert: %s\n\t%v\n", alertRule.Rule, fail)
 	}
 	return alerts
 }

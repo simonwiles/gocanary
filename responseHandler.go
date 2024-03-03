@@ -7,9 +7,9 @@ import (
 )
 
 type response struct {
-	Version string           `json:"version"`
-	Disks   map[string]*disk `json:"disks"`
-	Alerts  *[]string        `json:"alerts,omitempty"`
+	Version string                  `json:"version"`
+	Alerts  *map[string]interface{} `json:"alerts,omitempty"`
+	Disks   map[string]*disk        `json:"disks"`
 }
 
 func writeJsonResponse(response response, w http.ResponseWriter) {
@@ -42,9 +42,6 @@ func buildResponseHandler(alerts []alertRule) http.Handler {
 
 		if alerts := testAlertRules(response, alerts); len(alerts) > 0 {
 			response.Alerts = &alerts
-			for _, alert := range alerts {
-				fmt.Printf("Alert: %s\n", alert)
-			}
 		}
 
 		if err == nil {
