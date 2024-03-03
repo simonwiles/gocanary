@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/expr-lang/expr"
 	"github.com/expr-lang/expr/vm"
 )
@@ -25,16 +27,17 @@ func compileAlerts(alertExprs *[]string) ([]alertRule, error) {
 	return alertRules, nil
 }
 
-func testAlertRules(response response, alertRules []alertRule) (bool, *string) {
+func testAlertRules(response response, alertRules []alertRule) []string {
 
+	alerts := []string{}
 	for _, alertRule := range alertRules {
 		fail, err := expr.Run(alertRule.Program, response)
 		if err != nil {
-			return true, &alertRule.Rule
+			alerts = append(alerts, fmt.Sprintf("Failed to evaluate alert rule: %v", err))
 		}
 		if fail == true {
-			return true, &alertRule.Rule
+			alerts = append(alerts, alertRule.Rule)
 		}
 	}
-	return false, nil
+	return alerts
 }

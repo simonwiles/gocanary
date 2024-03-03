@@ -9,9 +9,10 @@ import (
 type response struct {
 	Version string           `json:"version"`
 	Disks   map[string]*disk `json:"disks"`
+	Alerts  *[]string        `json:"alerts,omitempty"`
 }
 
-func writeJsonResponse(response any, w http.ResponseWriter) {
+func writeJsonResponse(response response, w http.ResponseWriter) {
 	rJson, err := json.MarshalIndent(response, "", "    ")
 	if err != nil {
 		errorMessage := fmt.Sprintf("Failed to properly encode system data to JSON, with error: %s\n", err)
@@ -22,7 +23,11 @@ func writeJsonResponse(response any, w http.ResponseWriter) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
+	responseCode := http.StatusOK
+	if response.Alerts != nil {
+		responseCode = http.StatusInternalServerError
+	}
+	w.WriteHeader(responseCode)
 	w.Write(rJson)
 }
 
@@ -35,8 +40,11 @@ func buildResponseHandler(alerts []alertRule) http.Handler {
 			Disks:   disksMap,
 		}
 
-		if alert, rule := testAlertRules(response, alerts); alert {
-			fmt.Println(alert, *rule)
+		if alerts := testAlertRules(response, alerts); len(alerts) > 0 {
+			response.Alerts = &alerts
+			for _, alert := range alerts {
+				fmt.Printf("Alert: %s\n", alert)
+			}
 		}
 
 		if err == nil {
