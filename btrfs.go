@@ -21,7 +21,7 @@ type btrfsData struct {
 	ScrubStatus *scrubStatus `json:"scrubStatus"`
 }
 
-func GetBtrfsData(mountPoint string) (*btrfsData, error) {
+func getBtrfsData(mountPoint string) (*btrfsData, error) {
 	scrubStatusOutput, err := getScrubStatusOutput(mountPoint)
 	if err != nil {
 		return nil, err

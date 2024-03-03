@@ -29,7 +29,7 @@ type disk struct {
 	Btrfs       *btrfsData `json:"btrfs,omitempty"`
 }
 
-func GetDisksMap() (map[string]*disk, error) {
+func getDisksMap() (map[string]*disk, error) {
 	dfOutput, err := getDfOutput()
 	if err != nil {
 		return nil, err
@@ -55,7 +55,7 @@ func GetDisksMap() (map[string]*disk, error) {
 			}
 
 			if fs.FsType == "btrfs" {
-				disksMap[fs.Name].Btrfs, err = GetBtrfsData(fs.MountPoint)
+				disksMap[fs.Name].Btrfs, err = getBtrfsData(fs.MountPoint)
 				if err != nil {
 					return nil, err
 				}

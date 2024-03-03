@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -13,50 +12,15 @@ import (
 
 const AppVersion = "0.2"
 
-type response struct {
-	Version string           `json:"version"`
-	Disks   map[string]*disk `json:"disks"`
-}
-
-func jsonResponse(response any, w http.ResponseWriter) {
-	rJson, err := json.MarshalIndent(response, "", "    ")
-	if err != nil {
-		rJson = []byte(fmt.Sprintf("Failed to properly encode system data to JSON, with error: %s\n", err))
-	}
-
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(rJson)
-}
-
-func middleware() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fileSystems, err := GetDisksMap()
-
-		response := response{
-			Version: AppVersion,
-			Disks:   fileSystems,
-		}
-
-		if err == nil {
-			jsonResponse(response, w)
-			return
-		}
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
-	})
-}
-
 func main() {
 
 	fs := ff.NewFlagSet("gocanary")
 	var (
-		version = fs.BoolLong("version", "prints current app version")
-		host    = fs.String('h', "host", "localhost", "Port to run the server on")
-		port    = fs.Uint('p', "port", 8930, "Port to run the server on")
-		_       = fs.String('c', "config", "", "Path to config file")
+		version    = fs.BoolLong("version", "prints current app version")
+		host       = fs.String('h', "host", "localhost", "Port to run the server on")
+		port       = fs.Uint('p', "port", 8930, "Port to run the server on")
+		alertExprs = fs.StringSetLong("alert-when", "alert rule (repeatable)")
+		_          = fs.String('c', "config", "", "Path to config file")
 	)
 
 	if err := ff.Parse(fs, os.Args[1:],
@@ -74,7 +38,13 @@ func main() {
 		os.Exit(0)
 	}
 
+	alertRules, err := compileAlerts(alertExprs)
+	if err != nil {
+		fmt.Printf("Failed to compile alert rules, with error:\n%v\n", err)
+		os.Exit(1)
+	}
+
 	fmt.Printf("Listening on %s:%d...\n", *host, *port)
-	http.Handle("/", middleware())
+	http.Handle("/", buildResponseHandler(alertRules))
 	log.Fatal(http.ListenAndServe(fmt.Sprintf("%s:%d", *host, *port), nil))
 }
