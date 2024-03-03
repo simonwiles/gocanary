@@ -10,17 +10,31 @@ type alertRule struct {
 	Program *vm.Program
 }
 
-func compileAlerts(alertRules *[]string) ([]alertRule, error) {
-	alerts := make([]alertRule, len(*alertRules))
-	for i, ruleStr := range *alertRules {
+func compileAlerts(alertExprs *[]string) ([]alertRule, error) {
+	alertRules := make([]alertRule, len(*alertExprs))
+	for i, ruleStr := range *alertExprs {
 		program, err := expr.Compile(ruleStr, expr.Env(response{}))
 		if err != nil {
 			return nil, err
 		}
-		alerts[i] = alertRule{
+		alertRules[i] = alertRule{
 			Rule:    ruleStr,
 			Program: program,
 		}
 	}
-	return alerts, nil
+	return alertRules, nil
+}
+
+func testAlertRules(response response, alertRules []alertRule) (bool, *string) {
+
+	for _, alertRule := range alertRules {
+		fail, err := expr.Run(alertRule.Program, response)
+		if err != nil {
+			return true, &alertRule.Rule
+		}
+		if fail == true {
+			return true, &alertRule.Rule
+		}
+	}
+	return false, nil
 }
