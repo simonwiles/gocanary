@@ -36,7 +36,7 @@ func testAlertRules(response response, alertRules []alertRule) map[string]interf
 			alerts[alertRule.Rule] = fmt.Sprintf("Failed to evaluate alert rule: %v", err)
 			continue
 		}
-		if fail == false {
+		if fail == false || len(fail.([]interface{})) == 0 {
 			continue
 		}
 		alerts[alertRule.Rule] = fail
