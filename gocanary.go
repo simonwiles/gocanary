@@ -10,7 +10,7 @@ import (
 	"github.com/peterbourgon/ff/v4/ffhelp"
 )
 
-const AppVersion = "1.0"
+const AppVersion = "1.1"
 
 func main() {
 
