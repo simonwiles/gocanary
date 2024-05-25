@@ -17,6 +17,7 @@ func main() {
 	fs := ff.NewFlagSet("gocanary")
 	var (
 		version    = fs.BoolLong("version", "prints current app version")
+		help       = fs.BoolLong("help", "prints this help text")
 		host       = fs.String('h', "host", "localhost", "Port to run the server on")
 		port       = fs.Uint('p', "port", 8930, "Port to run the server on")
 		alertExprs = fs.StringSetLong("alert-when", "alert rule (repeatable)")
@@ -30,6 +31,11 @@ func main() {
 	); err != nil {
 		fmt.Printf("%s\n", ffhelp.Flags(fs))
 		fmt.Printf("err=%v\n", err)
+		os.Exit(0)
+	}
+
+	if *help {
+		fmt.Printf("%s\n", ffhelp.Flags(fs))
 		os.Exit(0)
 	}
 
