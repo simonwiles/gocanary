@@ -4,13 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"slices"
 )
 
 type response struct {
 	Version string                  `json:"Version"`
 	Alerts  *map[string]interface{} `json:"Alerts,omitempty"`
-	Memory  map[string]*memoryStats `json:"Memory"`
-	Disks   map[string]*disk        `json:"Disks"`
+	Memory  map[string]*memoryStats `json:"Memory,omitempty"`
+	Disks   map[string]*disk        `json:"Disks,omitempty"`
 }
 
 func writeJsonResponse(response response, w http.ResponseWriter) {
@@ -32,32 +33,41 @@ func writeJsonResponse(response response, w http.ResponseWriter) {
 	w.Write(rJson)
 }
 
-func buildResponseHandler(alerts []alertRule) http.Handler {
+func buildResponseHandler(alerts []alertRule, modules *[]string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
 			http.NotFound(w, r)
 			return
 		}
-
-		disksMap, err := getDisksMap()
-		memoryMap, err := getMemoryMap()
-
 		response := response{
 			Version: AppVersion,
-			Memory:  memoryMap,
-			Disks:   disksMap,
+		}
+
+		if slices.Contains(*modules, "disks") {
+			disksMap, err := getDisksMap()
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(err.Error()))
+				return
+			}
+			response.Disks = disksMap
+		}
+
+		if slices.Contains(*modules, "memory") {
+			memoryMap, err := getMemoryMap()
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(err.Error()))
+				return
+			}
+			response.Memory = memoryMap
 		}
 
 		if alerts := testAlertRules(response, alerts); len(alerts) > 0 {
 			response.Alerts = &alerts
 		}
 
-		if err == nil {
-			writeJsonResponse(response, w)
-			return
-		}
-
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+		writeJsonResponse(response, w)
+		return
 	})
 }

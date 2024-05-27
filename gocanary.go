@@ -20,12 +20,14 @@ func main() {
 		help       = fs.BoolLong("help", "prints this help text")
 		host       = fs.String('h', "host", "localhost", "Port to run the server on")
 		port       = fs.Uint('p', "port", 8930, "Port to run the server on")
+		modules    = fs.StringSetLong("modules", "modules to load (repeatable)")
 		alertExprs = fs.StringSetLong("alert-when", "alert rule (repeatable)")
 		_          = fs.String('c', "config", "", "Path to config file")
 	)
 
 	if err := ff.Parse(fs, os.Args[1:],
 		ff.WithEnvVarPrefix("GC"),
+		ff.WithEnvVarSplit(","),
 		ff.WithConfigFileFlag("config"),
 		ff.WithConfigFileParser(ff.PlainParser),
 	); err != nil {
@@ -44,6 +46,11 @@ func main() {
 		os.Exit(0)
 	}
 
+	if len(*modules) == 0 {
+		// Default modules
+		*modules = []string{"disks", "memory"}
+	}
+
 	alertRules, err := compileAlerts(alertExprs)
 	if err != nil {
 		fmt.Printf("Failed to compile alert rules, with error:\n%v\n", err)
@@ -51,6 +58,6 @@ func main() {
 	}
 
 	fmt.Printf("Listening on %s:%d...\n", *host, *port)
-	http.Handle("/", buildResponseHandler(alertRules))
+	http.Handle("/", buildResponseHandler(alertRules, modules))
 	log.Fatal(http.ListenAndServe(fmt.Sprintf("%s:%d", *host, *port), nil))
 }
