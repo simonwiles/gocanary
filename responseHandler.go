@@ -9,6 +9,7 @@ import (
 type response struct {
 	Version string                  `json:"Version"`
 	Alerts  *map[string]interface{} `json:"Alerts,omitempty"`
+	Memory  map[string]*memoryStats `json:"Memory"`
 	Disks   map[string]*disk        `json:"Disks"`
 }
 
@@ -39,9 +40,11 @@ func buildResponseHandler(alerts []alertRule) http.Handler {
 		}
 
 		disksMap, err := getDisksMap()
+		memoryMap, err := getMemoryMap()
 
 		response := response{
 			Version: AppVersion,
+			Memory:  memoryMap,
 			Disks:   disksMap,
 		}
 
