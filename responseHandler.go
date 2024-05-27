@@ -33,6 +33,11 @@ func writeJsonResponse(response response, w http.ResponseWriter) {
 
 func buildResponseHandler(alerts []alertRule) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" {
+			http.NotFound(w, r)
+			return
+		}
+
 		disksMap, err := getDisksMap()
 
 		response := response{
