@@ -7,9 +7,9 @@ import (
 )
 
 type response struct {
-	Version string                  `json:"version"`
-	Alerts  *map[string]interface{} `json:"alerts,omitempty"`
-	Disks   map[string]*disk        `json:"disks"`
+	Version string                  `json:"Version"`
+	Alerts  *map[string]interface{} `json:"Alerts,omitempty"`
+	Disks   map[string]*disk        `json:"Disks"`
 }
 
 func writeJsonResponse(response response, w http.ResponseWriter) {

@@ -19,14 +19,14 @@ type fileSystem struct {
 }
 
 type disk struct {
-	Name        string     `json:"name"`
-	FsType      string     `json:"fsType"`
-	Size        uint64     `json:"size"`
-	Used        uint64     `json:"used"`
-	UsedPercent uint       `json:"usedPercent"`
-	Available   uint64     `json:"available"`
-	MountPoints []string   `json:"mountPoints"`
-	Btrfs       *btrfsData `json:"btrfs,omitempty"`
+	Name        string     `json:"Name"`
+	FsType      string     `json:"FsType"`
+	Size        uint64     `json:"Size"`
+	Used        uint64     `json:"Used"`
+	UsedPercent uint       `json:"UsedPercent"`
+	Available   uint64     `json:"Available"`
+	MountPoints []string   `json:"MountPoints"`
+	Btrfs       *btrfsData `json:"Btrfs,omitempty"`
 }
 
 func getDisksMap() (map[string]*disk, error) {
