@@ -44,10 +44,6 @@ func testAlertRules(response response, alertRules []alertRule) map[string]interf
 	alerts := make(map[string]interface{})
 	for _, alertRule := range alertRules {
 		fail, err := expr.Run(alertRule.Program, response)
-		if err != nil {
-			alerts[alertRule.Rule] = fmt.Sprintf("Failed to evaluate alert rule: %v", err)
-			continue
-		}
 
 		if fail == false {
 			continue
@@ -57,8 +53,12 @@ func testAlertRules(response response, alertRules []alertRule) map[string]interf
 			continue
 		}
 
+		if err != nil {
+			fail = fmt.Sprintf("Failed to evaluate alert rule: %v", err)
+		}
+
 		alerts[alertRule.Label] = fail
-		fmt.Printf("Alert: %s\n\t%v\n", alertRule.Rule, fail)
+		fmt.Printf("Alert: %s\n\t%v\n", alertRule.Label, fail)
 	}
 	return alerts
 }
